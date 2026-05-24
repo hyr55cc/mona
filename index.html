@@ -273,6 +273,14 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0a0804;font-family:
   </div>
   <!-- CAMP TAB -->
   <div id="pv-camp" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+    <!-- Site badge inside panel -->
+    <div id="camp-site-badge" style="display:flex;align-items:center;gap:8px;padding:8px 12px 4px;flex-shrink:0">
+      <div id="camp-badge-pill" style="display:flex;align-items:center;gap:6px;background:rgba(201,150,60,.12);border:1px solid rgba(201,150,60,.3);border-radius:20px;padding:5px 14px">
+        <span id="camp-badge-icon">⛺</span>
+        <span id="camp-badge-label" style="font-size:12px;font-weight:800;color:#F0C96A">مخيمات منى</span>
+      </div>
+      <span id="camp-badge-count" style="font-size:10px;color:rgba(240,232,216,.4)">624 مخيم</span>
+    </div>
     <div style="padding:0 8px 7px;flex-shrink:0">
       <div class="csi"><span style="color:rgba(240,232,216,.3);font-size:13px">🔍</span>
         <input id="cinp" type="text" placeholder="مثال: 900-5 أو شارع 510" oninput="campSearch(this.value)" dir="rtl"></div>
@@ -676,6 +684,19 @@ function switchSite(s,btn){
   clearPMkrs(); renderPMkrs(PLACES); renderPlList(PLACES);
   clearS(); renderCampList([]); document.getElementById('cinp').value='';
   document.getElementById('camp-list').innerHTML='';
+  // Update badge
+  const isA=s==='arafat';
+  document.getElementById('camp-badge-icon').textContent=isA?'⛰️':'⛺';
+  document.getElementById('camp-badge-label').textContent=isA?'مخيمات عرفات':'مخيمات منى';
+  document.getElementById('camp-badge-label').style.color=isA?'#F0C96A':'#F0C96A';
+  document.getElementById('camp-badge-pill').style.background=isA?'rgba(240,200,0,.12)':'rgba(201,150,60,.12)';
+  document.getElementById('camp-badge-pill').style.borderColor=isA?'rgba(240,200,0,.4)':'rgba(201,150,60,.3)';
+  document.getElementById('camp-badge-count').textContent=isA?(ARAFAT_CAMPS.length+' مخيم'):'624 مخيم';
+  document.getElementById('cinp').placeholder=isA?'مثال: منطقة 9 · شارع 900':'مثال: 202-5 أو شارع 502';
+  // Update top search placeholder
+  document.getElementById('sinp').placeholder=isA
+    ?(lang==='ar'?'ابحث في مخيمات عرفات... مثال: 900':'Search Arafat camps... e.g. 900')
+    :(lang==='ar'?'ابحث في مخيمات منى... مثال: 202':'Search Mina camps... e.g. 202');
   toast(s==='mina'?'⛺ مشعر منى · 624 مخيم':'⛰️ مشعر عرفات · '+ARAFAT_CAMPS.length+' مخيم',4000);
 }
 
@@ -830,9 +851,14 @@ function renderCampList(list){
   el.innerHTML=list.slice(0,20).map(c=>{
     const lbl=tf('cL',c.z,c.st,c.c),cj=JSON.stringify(c).replace(/"/g,"'"),du=mDest(c.lat,c.lng);
     const dist=myPos?`<div class="ccd">${fD(myPos.distanceTo(L.latLng(c.lat,c.lng)))}</div>`:'';
-    return`<div class="cc" id="cc_${c.z}_${c.st}_${c.c}" onclick="showCamp(${cj})">
-      <div class="cct"><span style="font-size:20px">⛺</span>
-        <div><div class="ccl">${lbl}</div><span class="ccz">${TX[lang].zn[c.z]||c.z}</span></div></div>
+    const isArafat=site==='arafat';
+    const campIco=isArafat?'⛰️':'⛺';
+    const accentC=isArafat?'rgba(240,200,0,.18)':'rgba(201,150,60,.14)';
+    const accentB=isArafat?'rgba(240,200,0,.35)':'rgba(201,150,60,.25)';
+    const accentTx=isArafat?'#E8C800':'#C9963C';
+    return`<div class="cc" id="cc_${c.z}_${c.st}_${c.c}" onclick="showCamp(${cj})" style="border-color:${accentC}">
+      <div class="cct"><span style="font-size:20px">${campIco}</span>
+        <div><div class="ccl">${lbl}</div><span class="ccz" style="background:${accentC};border-color:${accentB};color:${accentTx}">${TX[lang].zn[c.z]||c.z}</span></div></div>
       ${dist}
       <div class="cca-row">
         <button class="cca pin" onclick="event.stopPropagation();showCamp(${cj})">📍</button>
@@ -847,8 +873,11 @@ function showCamp(c){
   map.flyTo(campLL,18,{duration:1.3});
   if(campMk)map.removeLayer(campMk);
   const lbl=tf('cL',c.z,c.st,c.c),du=mDest(c.lat,c.lng);
+  const campColor=site==='arafat'?'#E8C800':'#C9963C';
+  const campTextColor=site==='arafat'?'#1a1400':'#0a0804';
+  const campEmoji=site==='arafat'?'⛰️':'⛺';
   const ico=L.divIcon({
-    html:`<div class="cpin"><div style="font-size:24px;filter:drop-shadow(0 3px 8px rgba(0,0,0,.8))">⛺</div><div style="background:#C9963C;border-radius:7px;padding:2px 8px;font-size:10px;font-weight:900;color:#0a0804;margin-top:2px;white-space:nowrap">${lbl}</div></div>`,
+    html:`<div class="cpin"><div style="font-size:24px;filter:drop-shadow(0 3px 8px rgba(0,0,0,.8))">${campEmoji}</div><div style="background:${campColor};border-radius:7px;padding:2px 8px;font-size:10px;font-weight:900;color:${campTextColor};margin-top:2px;white-space:nowrap;border:1px solid ${campColor}cc">${lbl}</div></div>`,
     className:'',iconSize:[85,48],iconAnchor:[42,48],popupAnchor:[0,-50]
   });
   campMk=L.marker(campLL,{icon:ico,zIndexOffset:900}).addTo(map).bindPopup(`
